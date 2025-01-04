@@ -10,20 +10,20 @@ pub fn main() !void {
     }
     defer c.SDL_Quit();
 
-    const screen = c.SDL_CreateWindow("My Game Window", c.SDL_WINDOWPOS_UNDEFINED, c.SDL_WINDOWPOS_UNDEFINED, 400, 140, c.SDL_WINDOW_OPENGL) orelse
+    const win = c.SDL_CreateWindow("My Game Window", c.SDL_WINDOWPOS_UNDEFINED, c.SDL_WINDOWPOS_UNDEFINED, 400, 140, c.SDL_WINDOW_OPENGL) orelse
         {
         c.SDL_Log("Unable to create window: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
     };
-    defer c.SDL_DestroyWindow(screen);
+    defer c.SDL_DestroyWindow(win);
 
-    const renderer = c.SDL_CreateRenderer(screen, -1, 0) orelse {
+    const ren = c.SDL_CreateRenderer(win, -1, 0) orelse {
         c.SDL_Log("Unable to create renderer: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
     };
-    defer c.SDL_DestroyRenderer(renderer);
+    defer c.SDL_DestroyRenderer(ren);
 
-    const zig_bmp = @embedFile("zig.bmp");
+    const zig_bmp = @embedFile("test_img");
     const rw = c.SDL_RWFromConstMem(zig_bmp, zig_bmp.len) orelse {
         c.SDL_Log("Unable to get RWFromConstMem: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
@@ -36,15 +36,16 @@ pub fn main() !void {
     };
     defer c.SDL_FreeSurface(zig_surface);
 
-    const zig_texture = c.SDL_CreateTextureFromSurface(renderer, zig_surface) orelse {
+    const zig_texture = c.SDL_CreateTextureFromSurface(ren, zig_surface) orelse {
         c.SDL_Log("Unable to create texture from surface: %s", c.SDL_GetError());
         return error.SDLInitializationFailed;
     };
     defer c.SDL_DestroyTexture(zig_texture);
 
     var quit = false;
+    var event: c.SDL_Event = undefined;
+
     while (!quit) {
-        var event: c.SDL_Event = undefined;
         while (c.SDL_PollEvent(&event) != 0) {
             switch (event.type) {
                 c.SDL_QUIT => {
@@ -54,9 +55,9 @@ pub fn main() !void {
             }
         }
 
-        _ = c.SDL_RenderClear(renderer);
-        _ = c.SDL_RenderCopy(renderer, zig_texture, null, null);
-        c.SDL_RenderPresent(renderer);
+        _ = c.SDL_RenderClear(ren);
+        _ = c.SDL_RenderCopy(ren, zig_texture, null, null);
+        c.SDL_RenderPresent(ren);
 
         c.SDL_Delay(17);
     }
