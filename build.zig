@@ -16,6 +16,7 @@ pub fn build(b: *std.Build) void {
         // The SDL package doesn't work for Linux yet, so we rely on system
         // packages for now.
         exe.linkSystemLibrary("SDL2");
+        exe.linkSystemLibrary("SDL2_image");
         exe.linkLibC();
     } else {
         const sdl_dep = b.dependency("sdl", .{
@@ -24,7 +25,7 @@ pub fn build(b: *std.Build) void {
         });
         exe.linkLibrary(sdl_dep.artifact("SDL2"));
     }
-    exe.root_module.addAnonymousImport("test_img", .{ .root_source_file = b.path("./assets/img/zig.bmp") });
+    exe.root_module.addAnonymousImport("test_img", .{ .root_source_file = b.path("./assets/img/zig.png") });
 
     b.installArtifact(exe);
 
