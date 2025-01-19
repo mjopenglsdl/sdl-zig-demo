@@ -25,7 +25,8 @@ pub fn build(b: *std.Build) void {
         });
         exe.linkLibrary(sdl_dep.artifact("SDL2"));
     }
-    exe.root_module.addAnonymousImport("test_img", .{ .root_source_file = b.path("./assets/img/zig.png") });
+    exe.root_module.addAnonymousImport("bg", .{ .root_source_file = b.path("./assets/img/bg.png") });
+    exe.root_module.addAnonymousImport("foo", .{ .root_source_file = b.path("./assets/img/foo.png") });
 
     b.installArtifact(exe);
 

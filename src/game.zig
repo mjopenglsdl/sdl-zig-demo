@@ -1,9 +1,10 @@
+const util = @import("util.zig");
+const Actor = @import("actor.zig").Actor;
+
 const c = @cImport({
     @cInclude("SDL2/SDL.h");
     @cInclude("SDL2/SDL_image.h");
 });
-
-const assert = @import("std").debug.assert;
 
 const SCREEN_WIDTH = 640;
 const SCREEN_HEIGHT = 480;
@@ -15,6 +16,8 @@ pub const Game = struct {
     tex_bg: *c.SDL_Texture = undefined,
 
     running: bool = false,
+
+    actor: Actor = Actor{},
 
     pub fn init(s: *Game) !void {
         if (c.SDL_Init(c.SDL_INIT_VIDEO) != 0) {
@@ -32,17 +35,22 @@ pub const Game = struct {
             return error.SDLInitializationFailed;
         };
 
-        s.ren = c.SDL_CreateRenderer(s.win, -1, 0) orelse {
+        s.ren = c.SDL_CreateRenderer(s.win, -1, c.SDL_RENDERER_ACCELERATED | c.SDL_RENDERER_PRESENTVSYNC) orelse {
             c.SDL_Log("Unable to create renderer: %s", c.SDL_GetError());
             return error.SDLInitializationFailed;
         };
 
-        try s.loadRes();
+        s.tex_bg = try util.loadTex(s.ren, "bg");
+
+        // init actor
+        try s.actor.init();
+        s.actor.tex = try util.loadTex(s.ren, "foo");
 
         s.running = true;
     }
 
     pub fn clean(s: *Game) void {
+        s.actor.clean();
         c.SDL_DestroyTexture(s.tex_bg);
 
         c.SDL_DestroyRenderer(s.ren);
@@ -60,26 +68,6 @@ pub const Game = struct {
             s.onRender();
             c.SDL_Delay(17);
         }
-    }
-
-    fn loadRes(s: *Game) !void {
-        const f_zig_img = @embedFile("test_img");
-        const rw = c.SDL_RWFromConstMem(f_zig_img, f_zig_img.len) orelse {
-            c.SDL_Log("Unable to get RWFromConstMem: %s", c.SDL_GetError());
-            return error.SDLInitializationFailed;
-        };
-        defer assert(c.SDL_RWclose(rw) == 0);
-
-        const zig_surface = c.IMG_Load_RW(rw, 0) orelse {
-            c.SDL_Log("Unable to load bmp: %s", c.SDL_GetError());
-            return error.SDLInitializationFailed;
-        };
-        defer c.SDL_FreeSurface(zig_surface);
-
-        s.tex_bg = c.SDL_CreateTextureFromSurface(s.ren, zig_surface) orelse {
-            c.SDL_Log("Unable to create texture from surface: %s", c.SDL_GetError());
-            return error.SDLInitializationFailed;
-        };
     }
 
     fn onEvent(s: *Game, event: *c.SDL_Event) void {
@@ -102,13 +90,16 @@ pub const Game = struct {
     }
 
     fn onUpdate(s: *Game) void {
-        _ = s;
+        s.actor.onUpdate();
     }
 
     fn onRender(s: *Game) void {
         _ = c.SDL_RenderClear(s.ren);
 
         _ = c.SDL_RenderCopy(s.ren, s.tex_bg, null, null);
+
+        const render_info = s.actor.getRenderInfo();
+        _ = c.SDL_RenderCopy(s.ren, render_info[0], &render_info[1], &render_info[2]);
 
         c.SDL_RenderPresent(s.ren);
     }

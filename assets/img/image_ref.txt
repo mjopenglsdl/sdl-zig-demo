@@ -1,0 +1,5 @@
+- bg.png
+https://github.com/andrewrk/sdl-zig-demo/blob/master/src/zig.bmp
+
+- foo.png:
+https://lazyfoo.net/tutorials/SDL/14_animated_sprites_and_vsync/index.php
